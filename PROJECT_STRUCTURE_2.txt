@@ -1,0 +1,150 @@
+==========================================================================================
+				NEST
+==========================================================================================
+INSTALLATION
+------------------------------------------------------------------------------------------
+npm i -g pnpm			=>		install PNPM Package
+pnpm i -g @nestjs/cli		=>		install Nest via CLI
+nest --version			=>		check the nest version
+nest new <project-name>		=>		create nest project name/the prompt is 
+						prompt what package you use choose pnpm
+pnpm install			=>		install packages
+pnpm run start:dev		=>		start application in dev mode in localhost:3000
+------------------------------------------------------------------------------------------
+CORE
+------------------------------------------------------------------------------------------
+pnpm add @nestjs/config				=>		Load and manage environment variables from `.env
+						=>		Makes configuration accessible app-wide	
+pnpm add class-validator class-transformer	=>		class-validator:
+									=>	Validates incoming request DTOs.	
+									=>	Prevents invalid payloads.
+								class-transformer:
+									=>	Transforms request data to DTO classes
+									=>	Enables auto type conversion
+
+pnpm add @nestjs/terminus			=>		 Health check module
+						=> Used for:
+         							 App uptime monitoring
+         							 Database health
+         							 Redis / external service checks
+    						=> Commonly used with AWS ALB / Kubernetes
+-------------------------------------------------------------------------------------------
+ENVIRONMENT VARIABLES
+-------------------------------------------------------------------------------------------
+DATABASE_URL="mysql://user:password@localhost:3306/app_db"
+DATABASE_PORT=3306
+DATABASE_USERNAME=root
+DATABASE_PASSWORD=
+DATABASE_NAME=my_db
+
+NOTE:	
+=>	import it in APP_MODULE
+
+	@Module({
+	imports: [
+		ConfigModule.forRoot({
+		isGlobal: true,
+		}),
+	],
+})
+	
+
+=>	declare the validationPipe in Global
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,              // Remove unknown properties
+      forbidNonWhitelisted: true,   // Reject invalid payloads
+      transform: true,              // Auto-transform DTOs
+    }),
+  );
+
+	
+	
+-------------------------------------------------------------------------------------------
+COMMON COMMANDS
+-------------------------------------------------------------------------------------------
+nest g module user	=>	Create user feature module
+nest g controller user	=>	Handle user HTTP routes
+nest g service user	=>	Business logic layer
+pnpm run start		=>	Run production server
+pnpm run start:dev	=>	Run dev server with hot reload
+pnpm run build		=>	Compile app for production
+
+
+==========================================================================================
+								PRISMA
+==========================================================================================
+1. npm install prisma --save-dev
+npx prisma
+npx prisma init
+
+2. SET THIS IN SCHEMA:
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+}
+
+3. generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "cjs"
+}
+
+ADD cjs TO fORCE GENERATE commonJS
+
+4. YOU CAN MODIFY THE DATABASE_URL IN .env.
+
+
+5. ADD MODELS
+model User {
+  id    Int     @default(autoincrement()) @id
+  email String  @unique
+  name  String?
+  posts Post[]
+}
+
+model Post {
+  id        Int      @default(autoincrement()) @id
+  title     String
+  content   String?
+  published Boolean? @default(false)
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+
+6. MIGRATION
+npx prisma migrate dev --name init
+prisma
+├── dev.db
+├── migrations
+│   └── 20201207100915_init
+│       └── migration.sql
+└── schema.prisma
+
+7. INSTALL CLIENT TO INSTALL PRISMA GENERATED DATABASE CLIENT
+npm install @prisma/client
+npx prisma generate
+
+8. INSTALL MARIADB adapter
+pnpm install @prisma/adapter-mariadb mysql2
+
+9. GENERATE PRISMA SERVICE 
+
+import { Injectable } from '@nestjs/common';
+import { PrismaClient } from './generated/prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+
+@Injectable()
+export class PrismaService extends PrismaClient {
+  constructor() {
+    const adapter = new PrismaMariaDb({ url: process.env.DATABASE_URL });
+    super({ adapter });
+  }
+}
+
+10. YOU CAN INJECT THAT ONE VIA CONSTRUCTOR
+
+
+
+
